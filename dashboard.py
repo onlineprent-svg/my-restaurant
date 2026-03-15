@@ -8,7 +8,7 @@ st.set_page_config(page_title="إدارة المطعم - جوجل شيت", layou
 # الاتصال
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-st.title("📞 إدارة المنتجات عبر Google Sheets")
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # عرض المنتجات الحالية
 df = conn.read(worksheet="Sheet1", ttl="0")
