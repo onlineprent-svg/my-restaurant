@@ -180,4 +180,4 @@ if not products_df.empty:
 else:
     st.info("المنيو فارغ حالياً.")
 
-st.markdown("<br><p style='text-align: center; color: #1E1E1E; font-weight: bold; font-size: 28px;'>صنع بحب في كربلاء ❤️</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align: center; color: #1E1E1E; font-weight: bold; font-size: 28px;'>تشرفنا بزيارتكم ❤️</p>", unsafe_allow_html=True)
