@@ -1,32 +1,71 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import os
 
-st.set_page_config(page_title="إدارة المطعم - جوجل شيت", layout="wide")
+# 1. إعدادات الصفحة
+st.set_page_config(page_title="لوحة تحكم مطعم الحجي", layout="wide")
 
-# الاتصال
-conn = st.connection("gsheets", type=GSheetsConnection)
+PRODUCTS_FILE = "products.csv"
+NUMBERS_FILE = "numbers.txt"
 
-conn = st.connection("gsheets", type=GSheetsConnection)
+# دالة لتحميل البيانات
+def load_data(file):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame()
 
-# عرض المنتجات الحالية
-df = conn.read(worksheet="Sheet1", ttl="0")
-st.subheader("المنتجات الحالية في الجدول:")
-st.dataframe(df, use_container_width=True)
+# 2. القائمة الجانبية
+with st.sidebar:
+    st.title("⚙️ الإدارة")
+    option = st.radio("انتقل إلى:", ["📦 إدارة المنتجات", "📞 أرقام الواتساب"])
 
-# إضافة منتج جديد
-st.divider()
-st.subheader("➕ إضافة وجبة جديدة")
-with st.form("add_form"):
-    name = st.text_input("اسم الوجبة")
-    price = st.number_input("السعر", min_value=0)
-    img_url = st.text_input("رابط الصورة (ضع رابطاً مباشراً من الإنترنت أو ImgBB)")
-    submit = st.form_submit_button("إضافة للجدول ✅")
+# --- القسم الأول: إدارة المنتجات ---
+if option == "📦 إدارة المنتجات":
+    st.header("📊 قائمة الطعام الحالية")
+    df = load_data(PRODUCTS_FILE)
     
-    if submit and name:
-        new_row = pd.DataFrame([{"الاسم": name, "السعر": price, "الصورة": img_url}])
-        updated_df = pd.concat([df, new_row], ignore_index=True)
-        conn.update(worksheet="Sheet1", data=updated_df)
-        st.success("تم التحديث! سيظهر المنتج في المنيو خلال لحظات.")
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+        
+        st.divider()
+        st.subheader("🗑️ حذف منتج")
+        product_to_del = st.selectbox("اختر المنتج المراد حذفه", df['الاسم'].tolist())
+        if st.button("تأكيد الحذف"):
+            df = df[df['الاسم'] != product_to_del]
+            df.to_csv(PRODUCTS_FILE, index=False)
+            st.success(f"تم حذف {product_to_del} بنجاح!")
+            st.rerun()
+    else:
+        st.info("لا توجد منتجات حالياً في ملف products.csv")
+
+    st.divider()
+    st.subheader("➕ إضافة منتج جديد")
+    with st.form("add_product"):
+        new_name = st.text_input("اسم الوجبة")
+        new_price = st.number_input("السعر (د.ع)", min_value=0)
+        new_img = st.text_input("مسار الصورة (مثلاً: images/burger.jpg)")
+        submit = st.form_submit_button("إضافة للمنيو")
+        
+        if submit and new_name:
+            new_row = pd.DataFrame([{"الاسم": new_name, "السعر": new_price, "الصورة": new_img}])
+            df = pd.concat([df, new_row], ignore_index=True)
+            df.to_csv(PRODUCTS_FILE, index=False)
+            st.success("تمت الإضافة! (تذكر: الإضافة من هنا مؤقته على السيرفر المجاني)")
+
+# --- القسم الثاني: أرقام الواتساب ---
+elif option == "📞 أرقام الواتساب":
+    st.header("📞 رقم استلام الطلبات")
+    if os.path.exists(NUMBERS_FILE):
+        with open(NUMBERS_FILE, "r") as f:
+            current_num = f.read().strip()
+    else:
+        current_num = "لا يوجد رقم مسجل"
+    
+    st.write(f"الرقم الحالي: `{current_num}`")
+    
+    new_num = st.text_input("أدخل الرقم الجديد (مثلاً: 9647700000000)")
+    if st.button("حفظ الرقم"):
+        with open(NUMBERS_FILE, "w") as f:
+            f.write(new_num)
+        st.success("تم تحديث الرقم!")
         st.rerun()
